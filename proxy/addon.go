@@ -3,8 +3,8 @@ package proxy
 import (
 	"io"
 	"net/http"
-	"time"
 
+	"github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -62,41 +62,70 @@ func (addon *BaseAddon) StreamRequestModifier(f *Flow, in io.Reader) io.Reader  
 func (addon *BaseAddon) StreamResponseModifier(f *Flow, in io.Reader) io.Reader       { return in }
 func (addon *BaseAddon) AccessProxyServer(req *http.Request, res http.ResponseWriter) {}
 
+// AM Aiseclab
+// hashmap MIME types
+var MimeMap = make(map[string]string)
+var MimeMapforJSON = make(map[string]int)
+var FilesStorage string //will be injected from main.go
+var ProxyWorkMode *int
+var MinSizeDumpTextFile *int
+var DumpAllFilesWithoutFiltering *bool
+var ConvHtmlToTxtonDumping *bool
+var Dumprequests *bool
+var ClientRedis *redis.Client
+var RedisQueue *string
+var rclient = redis.NewClient(&redis.Options{
+	Addr:     "wawcoremngm.fc.internal:6379", //TODO - read from config
+	Password: "",
+	DB:       0,
+})
+
 // LogAddon log connection and flow
 type LogAddon struct {
 	BaseAddon
 }
 
 func (addon *LogAddon) ClientConnected(client *ClientConn) {
-	log.Infof("%v client connect\n", client.Conn.RemoteAddr())
+	log.Debugf("%v client connect\n", client.Conn.RemoteAddr())
 }
 
 func (addon *LogAddon) ClientDisconnected(client *ClientConn) {
-	log.Infof("%v client disconnect\n", client.Conn.RemoteAddr())
+	log.Debugf("%v client disconnect\n", client.Conn.RemoteAddr())
 }
 
 func (addon *LogAddon) ServerConnected(connCtx *ConnContext) {
-	log.Infof("%v server connect %v (%v->%v)\n", connCtx.ClientConn.Conn.RemoteAddr(), connCtx.ServerConn.Address, connCtx.ServerConn.Conn.LocalAddr(), connCtx.ServerConn.Conn.RemoteAddr())
+	log.Debugf("%v server connect %v (%v->%v)\n", connCtx.ClientConn.Conn.RemoteAddr(), connCtx.ServerConn.Address, connCtx.ServerConn.Conn.LocalAddr(), connCtx.ServerConn.Conn.RemoteAddr())
 }
 
 func (addon *LogAddon) ServerDisconnected(connCtx *ConnContext) {
-	log.Infof("%v server disconnect %v (%v->%v) - %v\n", connCtx.ClientConn.Conn.RemoteAddr(), connCtx.ServerConn.Address, connCtx.ServerConn.Conn.LocalAddr(), connCtx.ServerConn.Conn.RemoteAddr(), connCtx.FlowCount.Load())
+	log.Debugf("%v server disconnect %v (%v->%v) - %v\n", connCtx.ClientConn.Conn.RemoteAddr(), connCtx.ServerConn.Address, connCtx.ServerConn.Conn.LocalAddr(), connCtx.ServerConn.Conn.RemoteAddr(), connCtx.FlowCount.Load())
 }
 
+// Logika dla SWI
 func (addon *LogAddon) Requestheaders(f *Flow) {
-	log.Debugf("%v Requestheaders %v %v\n", f.ConnContext.ClientConn.Conn.RemoteAddr(), f.Request.Method, f.Request.URL.String())
-	start := time.Now()
 	go func() {
 		<-f.Done()
-		var StatusCode int
-		if f.Response != nil {
-			StatusCode = f.Response.StatusCode
+		if f.Response == nil || f.Response.Body == nil {
+			log.Debug("No headers or body in stream")
+			return
 		}
-		var contentLen int
-		if f.Response != nil && f.Response.Body != nil {
-			contentLen = len(f.Response.Body)
+
+		switch *ProxyWorkMode {
+		case 0: // klasyczne proxy, ale nic nie zrzuca, nie analizuje
+		case 1:
+			// tryb analizy z SWI
+			//funkcja zwraca error, ale nie jest obsługiwany, bo w sumie do niczego go nie potrzbujemy. Albo dump się uda, albo nie
+			// wszelkie logowanie jest w trakcie. decelowo usupełni się może na potrzebę statystyk
+			// log.Debug("Executing swi mode for request")
+			go executeSwiMode(f)
+		case 2:
+			// tryb  dumpera wykrytych MIME typów na filestore
+			//funkcja zwraca error, ale nie jest obsługiwany, bo w sumie do niczego go nie potrzbujemy. Albo dump się uda, albo nie
+			// wszelkie logowanie jest w trakcie
+			go executeDumperMode(f)
+		default:
+			return
 		}
-		log.Infof("%v %v %v %v %v - %v ms\n", f.ConnContext.ClientConn.Conn.RemoteAddr(), f.Request.Method, f.Request.URL.String(), StatusCode, contentLen, time.Since(start).Milliseconds())
 	}()
 }
 

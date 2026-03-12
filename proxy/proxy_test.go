@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lqqyt2423/go-mitmproxy/cert"
+	"aisecproxy/cert"
 )
 
 func handleError(t *testing.T, err error) {

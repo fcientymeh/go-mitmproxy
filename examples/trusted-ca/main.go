@@ -4,7 +4,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/lqqyt2423/go-mitmproxy/proxy"
+	"aisecproxy/proxy"
+
 	log "github.com/sirupsen/logrus"
 )
 

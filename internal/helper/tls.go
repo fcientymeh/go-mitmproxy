@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Wireshark 解析 https 设置
+// Wireshark conf for https
 var tlsKeyLogWriter io.Writer
 var tlsKeyLogOnce sync.Once
 

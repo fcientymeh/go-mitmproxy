@@ -9,8 +9,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/lqqyt2423/go-mitmproxy/cert"
-	"github.com/lqqyt2423/go-mitmproxy/internal/helper"
+	"aisecproxy/cert"
+	"aisecproxy/internal/helper"
+
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 )
@@ -84,7 +85,6 @@ func newAttacker(proxy *Proxy) (*attacker, error) {
 		MaxConcurrentStreams: 100, // todo: wait for remote server setting
 		NewWriteScheduler:    func() http2.WriteScheduler { return http2.NewPriorityWriteScheduler(nil) },
 	}
-
 	return a, nil
 }
 
@@ -104,6 +104,7 @@ func (a *attacker) serveConn(clientTlsConn *tls.Conn, connCtx *ConnContext) {
 	connCtx.ClientConn.NegotiatedProtocol = clientTlsConn.ConnectionState().NegotiatedProtocol
 
 	if connCtx.ClientConn.NegotiatedProtocol == "h2" && connCtx.ServerConn != nil {
+
 		connCtx.ServerConn.client = &http.Client{
 			Transport: &http2.Transport{
 				DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
@@ -112,27 +113,36 @@ func (a *attacker) serveConn(clientTlsConn *tls.Conn, connCtx *ConnContext) {
 				DisableCompression: true,
 			},
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				// 禁止自动重定向
 				return http.ErrUseLastResponse
 			},
 		}
 
+		// tylko value w ctx — BEZ cancel
 		ctx := context.WithValue(context.Background(), connContextKey, connCtx)
-		ctx, cancel := context.WithCancel(ctx)
+
+		// zamykamy conn gdy klient znika
 		go func() {
 			<-connCtx.ClientConn.Conn.(*wrapClientConn).closeChan
-			cancel()
+			clientTlsConn.Close()
 		}()
-		go func() {
-			a.h2Server.ServeConn(clientTlsConn, &http2.ServeConnOpts{
+
+		// ServeConn w osobnej goroutine, bez zewnętrznego cancel
+		go func(conn *tls.Conn) {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Errorf("http2 panic: %v", r)
+				}
+			}()
+
+			a.h2Server.ServeConn(conn, &http2.ServeConnOpts{
 				Context:    ctx,
 				Handler:    a,
 				BaseConfig: a.server,
 			})
-		}()
+		}(clientTlsConn)
+
 		return
 	}
-
 	a.listener.accept(&attackerConn{
 		Conn:    clientTlsConn,
 		connCtx: connCtx,
@@ -182,7 +192,6 @@ func (a *attacker) initHttpDialFn(req *http.Request) {
 				DisableCompression: true,  // To get the original response from the server, set Transport.DisableCompression to true.
 			},
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				// 禁止自动重定向
 				return http.ErrUseLastResponse
 			},
 		}
@@ -244,7 +253,6 @@ func (a *attacker) serverTlsHandshake(ctx context.Context, connCtx *ConnContext)
 			DisableCompression: true, // To get the original response from the server, set Transport.DisableCompression to true.
 		},
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			// 禁止自动重定向
 			return http.ErrUseLastResponse
 		},
 	}
@@ -306,7 +314,7 @@ func (a *attacker) httpsTlsDial(ctx context.Context, cconn net.Conn, conn net.Co
 	clientHandshakeDoneChan := make(chan struct{})
 
 	clientTlsConn := tls.Server(cconn, &tls.Config{
-		SessionTicketsDisabled: true, // 设置此值为 true ，确保每次都会调用下面的 GetConfigForClient 方法
+		SessionTicketsDisabled: true, // Ustaw tę wartość na true, aby upewnić się, że metoda GetConfigForClient poniżej będzie wywoływana za każdym razem
 		GetConfigForClient: func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
 			clientHelloChan <- chi
 			nextProtos := make([]string, 0)
@@ -383,7 +391,7 @@ func (a *attacker) httpsLazyAttack(ctx context.Context, cconn net.Conn, req *htt
 	})
 
 	clientTlsConn := tls.Server(cconn, &tls.Config{
-		SessionTicketsDisabled: true, // 设置此值为 true ，确保每次都会调用下面的 GetConfigForClient 方法
+		SessionTicketsDisabled: true, // Ustaw tę wartość na true, aby upewnić się, że metoda GetConfigForClient poniżej będzie wywoływana za każdym razem
 		GetConfigForClient: func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
 			connCtx.ClientConn.clientHello = chi
 			c, err := a.ca.GetCert(chi.ServerName)

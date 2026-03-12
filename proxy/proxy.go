@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/lqqyt2423/go-mitmproxy/cert"
-	"github.com/lqqyt2423/go-mitmproxy/internal/helper"
+	"aisecproxy/cert"
+	"aisecproxy/internal/helper"
 	log "github.com/sirupsen/logrus"
 )
 

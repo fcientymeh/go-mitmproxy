@@ -156,7 +156,7 @@ func getStorePath(path string) (string, error) {
 		}
 	} else {
 		if !stat.Mode().IsDir() {
-			return "", fmt.Errorf("路径 %v 不是文件夹，请移除此文件重试", path)
+			return "", fmt.Errorf("Path %v is not a folder", path)
 		}
 	}
 
@@ -165,16 +165,16 @@ func getStorePath(path string) (string, error) {
 
 // The certificate and the private key in PEM format.
 func (ca *SelfSignCA) caFile() string {
-	return filepath.Join(ca.StorePath, "mitmproxy-ca.pem")
+	return filepath.Join(ca.StorePath, "aisecproxy-root-ca.pem")
 }
 
 // The certificate in PEM format.
 func (ca *SelfSignCA) caCertFile() string {
-	return filepath.Join(ca.StorePath, "mitmproxy-ca-cert.pem")
+	return filepath.Join(ca.StorePath, "root-ca.pem")
 }
 
 func (ca *SelfSignCA) caCertCerFile() string {
-	return filepath.Join(ca.StorePath, "mitmproxy-ca-cert.cer")
+	return filepath.Join(ca.StorePath, "root-ca.pem")
 }
 
 func (ca *SelfSignCA) load() error {
@@ -188,7 +188,7 @@ func (ca *SelfSignCA) load() error {
 	}
 
 	if !stat.Mode().IsRegular() {
-		return fmt.Errorf("%v 不是文件", caFile)
+		return fmt.Errorf("%v is not a file", caFile)
 	}
 
 	data, err := ioutil.ReadFile(caFile)
@@ -198,11 +198,11 @@ func (ca *SelfSignCA) load() error {
 
 	keyDERBlock, data := pem.Decode(data)
 	if keyDERBlock == nil {
-		return fmt.Errorf("%v 中不存在 PRIVATE KEY", caFile)
+		return fmt.Errorf("%v is not a PRIVATE KEY", caFile)
 	}
 	certDERBlock, _ := pem.Decode(data)
 	if certDERBlock == nil {
-		return fmt.Errorf("%v 中不存在 CERTIFICATE", caFile)
+		return fmt.Errorf("%v is not a valid CERTIFICATE", caFile)
 	}
 
 	var privateKey *rsa.PrivateKey
@@ -329,7 +329,7 @@ func (ca *SelfSignCA) GetCert(commonName string) (*tls.Certificate, error) {
 	return val.(*tls.Certificate), nil
 }
 
-// TODO: 是否应该支持多个 SubjectAltName
+// TODO: Support multiple SubjectAltName
 func (ca *SelfSignCA) DummyCert(commonName string) (*tls.Certificate, error) {
 	log.Debugf("ca DummyCert: %v", commonName)
 	template := &x509.Certificate{

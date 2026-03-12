@@ -1,0 +1,30 @@
+{
+  "Addr": "0.0.0.0:9080",
+  "WebAddr": "0.0.0.0:9081",
+  "SslInsecure": true,
+  "IgnoreHosts": [ 
+  ],
+  "AllowHosts": [
+  ],
+  "CertPath": "certs",
+  "Debug": 2,
+  "Dump": "",
+  "DumpLevel": 1,
+  "Upstream": "",
+  "UpstreamCert": true,
+  "MapRemote": "",
+  "MapLocal": "",
+  "LogFile": "",
+  "ProxyAuth": "",
+  "loglevel": 5,
+  "proxyMode": 0,
+  "storageDir": "suricata",
+  "redisAddr": "wawcoremngm.fc.internal:6379",
+  "redisPassword": "",
+  "redisDB": 0,
+  "redisqueuename": "aiplat",
+  "minSizeDumpTextFile": 1,
+  "dumpallfileswithoutfiltering": false,
+  "dumprequests": false,
+  "convHtmlToTxtonDumping": false
+}

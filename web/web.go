@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"sync"
 
+	proxy "aisecproxy/proxy"
+
 	"github.com/gorilla/websocket"
-	"github.com/lqqyt2423/go-mitmproxy/proxy"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,7 +64,7 @@ func NewWebAddon(addr string) *WebAddon {
 func (web *WebAddon) echo(w http.ResponseWriter, r *http.Request) {
 	c, err := web.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Print("upgrade:", err)
+		log.Print("upgrade: - web.go:67", err)
 		return
 	}
 

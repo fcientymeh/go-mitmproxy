@@ -6,9 +6,10 @@ import (
 	"errors"
 	"sync"
 
+	"aisecproxy/cert"
+
 	"github.com/golang/groupcache/lru"
 	"github.com/golang/groupcache/singleflight"
-	"github.com/lqqyt2423/go-mitmproxy/cert"
 	log "github.com/sirupsen/logrus"
 )
 

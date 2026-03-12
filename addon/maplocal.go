@@ -7,8 +7,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/lqqyt2423/go-mitmproxy/internal/helper"
-	"github.com/lqqyt2423/go-mitmproxy/proxy"
+	"aisecproxy/internal/helper"
+	"aisecproxy/proxy"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -26,14 +26,14 @@ func (addon *InstanceLogAddon) ClientConnected(client *ClientConn) {
 	addon.logger.WithFields(map[string]interface{}{
 		"client_addr": client.Conn.RemoteAddr().String(),
 		"event":       "client_connected",
-	}).Info("Client connected")
+	}).Debug("Client connected")
 }
 
 func (addon *InstanceLogAddon) ClientDisconnected(client *ClientConn) {
 	addon.logger.WithFields(map[string]interface{}{
 		"client_addr": client.Conn.RemoteAddr().String(),
 		"event":       "client_disconnected",
-	}).Info("Client disconnected")
+	}).Debug("Client disconnected")
 }
 
 func (addon *InstanceLogAddon) ServerConnected(connCtx *ConnContext) {
@@ -43,7 +43,7 @@ func (addon *InstanceLogAddon) ServerConnected(connCtx *ConnContext) {
 		"local_addr":  connCtx.ServerConn.Conn.LocalAddr().String(),
 		"remote_addr": connCtx.ServerConn.Conn.RemoteAddr().String(),
 		"event":       "server_connected",
-	}).Info("Server connected")
+	}).Debug("Server connected")
 }
 
 func (addon *InstanceLogAddon) ServerDisconnected(connCtx *ConnContext) {
@@ -54,7 +54,7 @@ func (addon *InstanceLogAddon) ServerDisconnected(connCtx *ConnContext) {
 		"remote_addr": connCtx.ServerConn.Conn.RemoteAddr().String(),
 		"flow_count":  connCtx.FlowCount.Load(),
 		"event":       "server_disconnected",
-	}).Info("Server disconnected")
+	}).Debug("Server disconnected")
 }
 
 func (addon *InstanceLogAddon) Requestheaders(f *Flow) {

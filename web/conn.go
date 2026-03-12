@@ -5,8 +5,9 @@ import (
 	"strings"
 	"sync"
 
+	"aisecproxy/proxy"
+
 	"github.com/gorilla/websocket"
-	"github.com/lqqyt2423/go-mitmproxy/proxy"
 	log "github.com/sirupsen/logrus"
 )
 
