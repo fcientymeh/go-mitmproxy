@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 )
 
 // Próba odczytu z Reader do bufora
@@ -45,6 +47,8 @@ var portMap = map[string]string{
 	"http":   "80",
 	"https":  "443",
 	"socks5": "1080",
+	"ws":     "80",
+	"wss":    "443",
 }
 
 // CanonicalAddr returns url.Host but always with a ":port" suffix.
@@ -63,6 +67,21 @@ func IsTls(buf []byte) bool {
 	} else {
 		return false
 	}
+}
+
+func IsWebSocket(buf []byte) bool {
+	// 使用 http.ReadRequest 解析 WebSocket 握手请求
+	req, err := http.ReadRequest(bufio.NewReader(bytes.NewReader(buf)))
+	if err != nil {
+		return false
+	}
+
+	// 检查 Upgrade 和 Connection 头
+	upgrade := req.Header.Get("Upgrade")
+	connection := req.Header.Get("Connection")
+
+	return strings.ToLower(upgrade) == "websocket" &&
+		strings.Contains(strings.ToLower(connection), "upgrade")
 }
 
 type ResponseCheck struct {

@@ -12,7 +12,8 @@ import ViewFlow from './containers/ViewFlow'
 import Resizer from './components/Resizer'
 
 import { Flow, FlowManager } from './utils/flow'
-import { parseMessage, SendMessageType, buildMessageMeta, MessageType } from './utils/message'
+import { parseMessage, SendMessageType, buildMessageMeta, MessageType,
+  IWebSocketStart, IWebSocketMessageData, IWebSocketEnd } from './utils/message'
 import { isInViewPort } from './utils/utils'
 import { ConnectionManager, IConnection } from './utils/connection'
 
@@ -172,6 +173,40 @@ class App extends React.Component<IProps, IState> {
         const flow = this.flowMgr.get(msg.id)
         if (!flow || !flow.response) return
         flow.addResponseBody(msg)
+        this.setState({ flows: this.state.flows })
+      }
+      else if (msg.type === MessageType.WEBSOCKET_START) {
+        // WebSocket 连接建立
+        const wsStart = msg.content as IWebSocketStart
+        console.log('[WebSocket Start]', { id: msg.id, connId: wsStart.connId, request: wsStart.request })
+        let flow = this.flowMgr.get(msg.id)
+        if (!flow) {
+          flow = new Flow(msg, this.connMgr)
+          flow.getConn()
+          this.flowMgr.add(flow)
+          this.setState({ flows: this.flowMgr.showList() })
+        }
+        flow.setWebSocketStart()
+      }
+      else if (msg.type === MessageType.WEBSOCKET_MESSAGE) {
+        // WebSocket 消息
+        const wsMsg = msg.content as IWebSocketMessageData
+        console.log('[WebSocket Message]', {
+          id: msg.id,
+          connId: wsMsg.connId,
+          msgIndex: wsMsg.msgIndex,
+          message: wsMsg.message
+        })
+        const flow = this.flowMgr.get(msg.id)
+        if (flow) {
+          flow.addWebSocketMessage(msg)
+          this.setState({ flows: this.state.flows })
+        }
+      }
+      else if (msg.type === MessageType.WEBSOCKET_END) {
+        // WebSocket 连接结束
+        const wsEnd = msg.content as IWebSocketEnd
+        console.log('[WebSocket End]', { id: msg.id, connId: wsEnd.connId, messageCount: wsEnd.messageCount })
         this.setState({ flows: this.state.flows })
       }
     }

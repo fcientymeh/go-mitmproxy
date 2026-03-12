@@ -151,8 +151,9 @@ func (a *attacker) serveConn(clientTlsConn *tls.Conn, connCtx *ConnContext) {
 
 func (a *attacker) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if strings.EqualFold(req.Header.Get("Connection"), "Upgrade") && strings.EqualFold(req.Header.Get("Upgrade"), "websocket") {
-		// wss
-		defaultWebSocket.wss(res, req)
+		if err := a.proxy.webSocketHandler.handleWSS(res, req); err != nil {
+			log.Errorf("handleWSS error: %v", err)
+		}
 		return
 	}
 
@@ -490,7 +491,9 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 		reqBuf, r, err := helper.ReaderToBuffer(req.Body, proxy.Opts.StreamLargeBodies)
 		reqBody = r
 		if err != nil {
-			log.Error(err)
+			for _, addon := range proxy.Addons {
+				addon.RequestError(f, err)
+			}
 			res.WriteHeader(502)
 			return
 		}
@@ -520,7 +523,9 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	proxyReqCtx := context.WithValue(req.Context(), proxyReqCtxKey, req)
 	proxyReq, err := http.NewRequestWithContext(proxyReqCtx, f.Request.Method, f.Request.URL.String(), reqBody)
 	if err != nil {
-		log.Error(err)
+		for _, addon := range proxy.Addons {
+			addon.RequestError(f, err)
+		}
 		res.WriteHeader(502)
 		return
 	}
@@ -544,8 +549,10 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	} else {
 		if f.ConnContext.ServerConn == nil && f.ConnContext.dialFn != nil {
 			if err := f.ConnContext.dialFn(req.Context()); err != nil {
+				for _, addon := range proxy.Addons {
+					addon.RequestError(f, err)
+				}
 				// Check for authentication failure
-				log.Error(err)
 				if strings.Contains(err.Error(), "Proxy Authentication Required") {
 					httpError(res, "", http.StatusProxyAuthRequired)
 					return
@@ -558,6 +565,9 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	}
 	if err != nil {
 		logErr(log, err)
+		for _, addon := range proxy.Addons {
+			addon.RequestError(f, err)
+		}
 		res.WriteHeader(502)
 		return
 	}
@@ -589,7 +599,9 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 		resBuf, r, err := helper.ReaderToBuffer(proxyRes.Body, proxy.Opts.StreamLargeBodies)
 		resBody = r
 		if err != nil {
-			log.Error(err)
+			for _, addon := range proxy.Addons {
+				addon.RequestError(f, err)
+			}
 			res.WriteHeader(502)
 			return
 		}

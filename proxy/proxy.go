@@ -29,11 +29,12 @@ type Proxy struct {
 	Version string
 	Addons  []Addon
 
-	entry           *entry
-	attacker        *attacker
-	shouldIntercept func(req *http.Request) bool              // req is received by proxy.server
-	upstreamProxy   func(req *http.Request) (*url.URL, error) // req is received by proxy.server, not client request
-	authProxy       func(res http.ResponseWriter, req *http.Request) (bool, error)
+	entry            *entry
+	attacker         *attacker
+	webSocketHandler *webSocketHandler
+	shouldIntercept  func(req *http.Request) bool              // req is received by proxy.server
+	upstreamProxy    func(req *http.Request) (*url.URL, error) // req is received by proxy.server, not client request
+	authProxy        func(res http.ResponseWriter, req *http.Request) (bool, error)
 }
 
 // proxy.server req context key
@@ -46,7 +47,7 @@ func NewProxy(opts *Options) (*Proxy, error) {
 
 	proxy := &Proxy{
 		Opts:    opts,
-		Version: "1.8.8",
+		Version: "1.8.9",
 		Addons:  make([]Addon, 0),
 	}
 
@@ -57,6 +58,8 @@ func NewProxy(opts *Options) (*Proxy, error) {
 		return nil, err
 	}
 	proxy.attacker = attacker
+
+	proxy.webSocketHandler = newWebSocketHandler(proxy)
 
 	return proxy, nil
 }

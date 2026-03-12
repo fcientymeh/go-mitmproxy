@@ -62,6 +62,10 @@ func (c *wrapClientConn) Peek(n int) ([]byte, error) {
 	return c.r.Peek(n)
 }
 
+func (c *wrapClientConn) PeekBuffered() ([]byte, error) {
+	return c.r.Peek(c.r.Buffered())
+}
+
 func (c *wrapClientConn) Read(data []byte) (int, error) {
 	return c.r.Read(data)
 }
@@ -251,12 +255,18 @@ func (e *entry) handleConnect(res http.ResponseWriter, req *http.Request) {
 func (e *entry) establishConnection(res http.ResponseWriter, f *Flow) (net.Conn, error) {
 	cconn, _, err := res.(http.Hijacker).Hijack()
 	if err != nil {
+		for _, addon := range e.proxy.Addons {
+			addon.HTTPConnectError(f, err)
+		}
 		res.WriteHeader(502)
 		return nil, err
 	}
 	_, err = io.WriteString(cconn, "HTTP/1.1 200 Connection Established\r\n\r\n")
 	if err != nil {
 		cconn.Close()
+		for _, addon := range e.proxy.Addons {
+			addon.HTTPConnectError(f, err)
+		}
 		return nil, err
 	}
 
@@ -282,7 +292,9 @@ func (e *entry) directTransfer(res http.ResponseWriter, req *http.Request, f *Fl
 
 	conn, err := proxy.getUpstreamConn(req.Context(), req)
 	if err != nil {
-		log.Error(err)
+		for _, addon := range proxy.Addons {
+			addon.HTTPConnectError(f, err)
+		}
 		res.WriteHeader(502)
 		return
 	}
@@ -290,7 +302,6 @@ func (e *entry) directTransfer(res http.ResponseWriter, req *http.Request, f *Fl
 
 	cconn, err := e.establishConnection(res, f)
 	if err != nil {
-		log.Error(err)
 		return
 	}
 	defer cconn.Close()
@@ -307,7 +318,9 @@ func (e *entry) httpsDialFirstAttack(res http.ResponseWriter, req *http.Request,
 
 	conn, err := proxy.attacker.httpsDial(req.Context(), req)
 	if err != nil {
-		log.Error(err)
+		for _, addon := range proxy.Addons {
+			addon.HTTPConnectError(f, err)
+		}
 		res.WriteHeader(502)
 		return
 	}
@@ -315,7 +328,6 @@ func (e *entry) httpsDialFirstAttack(res http.ResponseWriter, req *http.Request,
 	cconn, err := e.establishConnection(res, f)
 	if err != nil {
 		conn.Close()
-		log.Error(err)
 		return
 	}
 
@@ -326,17 +338,37 @@ func (e *entry) httpsDialFirstAttack(res http.ResponseWriter, req *http.Request,
 		log.Error(err)
 		return
 	}
-	if !helper.IsTls(peek) {
-		// todo: http, ws
-		transfer(log, conn, cconn)
-		cconn.Close()
-		conn.Close()
+
+	if helper.IsTls(peek) {
+		f.ConnContext.ClientConn.Tls = true
+		proxy.attacker.httpsTlsDial(req.Context(), cconn, conn)
 		return
 	}
 
-	// is tls
-	f.ConnContext.ClientConn.Tls = true
-	proxy.attacker.httpsTlsDial(req.Context(), cconn, conn)
+	wsPeek, err := cconn.(*wrapClientConn).PeekBuffered()
+	if err == io.EOF {
+		err = nil
+	}
+	if err != nil {
+		cconn.Close()
+		conn.Close()
+		log.Error(err)
+		return
+	}
+
+	if helper.IsWebSocket(wsPeek) {
+		err = proxy.webSocketHandler.handle(conn, cconn, f)
+		if err != nil {
+			log.Errorf("WebSocket handle error: %v", err)
+			cconn.Close()
+			conn.Close()
+		}
+		return
+	}
+
+	transfer(log, conn, cconn)
+	cconn.Close()
+	conn.Close()
 }
 
 func (e *entry) httpsDialLazyAttack(res http.ResponseWriter, req *http.Request, f *Flow) {
@@ -359,21 +391,45 @@ func (e *entry) httpsDialLazyAttack(res http.ResponseWriter, req *http.Request, 
 		return
 	}
 
-	if !helper.IsTls(peek) {
-		// todo: http, ws
+	if helper.IsTls(peek) {
+		f.ConnContext.ClientConn.Tls = true
+		proxy.attacker.httpsLazyAttack(req.Context(), cconn, req)
+		return
+	}
+
+	wsPeek, err := cconn.(*wrapClientConn).PeekBuffered()
+	if err == io.EOF {
+		err = nil
+	}
+	if err != nil {
+		cconn.Close()
+		log.Error(err)
+		return
+	}
+
+	if helper.IsWebSocket(wsPeek) {
 		conn, err := proxy.attacker.httpsDial(req.Context(), req)
 		if err != nil {
 			cconn.Close()
 			log.Error(err)
 			return
 		}
-		transfer(log, conn, cconn)
-		conn.Close()
-		cconn.Close()
+		err = proxy.webSocketHandler.handle(conn, cconn, f)
+		if err != nil {
+			log.Errorf("WebSocket handle error: %v", err)
+			cconn.Close()
+			conn.Close()
+		}
 		return
 	}
 
-	// is tls
-	f.ConnContext.ClientConn.Tls = true
-	proxy.attacker.httpsLazyAttack(req.Context(), cconn, req)
+	conn, err := proxy.attacker.httpsDial(req.Context(), req)
+	if err != nil {
+		cconn.Close()
+		log.Error(err)
+		return
+	}
+	transfer(log, conn, cconn)
+	conn.Close()
+	cconn.Close()
 }
