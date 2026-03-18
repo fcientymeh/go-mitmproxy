@@ -50,6 +50,14 @@ type Addon interface {
 	WebSocketMessage(*Flow)
 	WebSocketEnd(*Flow)
 
+	// Server-Sent Events hooks
+	// SSE stream started (detected text/event-stream content type)
+	SSEStart(*Flow)
+	// Each SSE event received (access via f.SSE.Events[len(f.SSE.Events)-1])
+	SSEMessage(*Flow)
+	// SSE stream ended
+	SSEEnd(*Flow)
+
 	// HTTP request failed with error
 	RequestError(*Flow, error)
 
@@ -75,6 +83,9 @@ func (addon *BaseAddon) AccessProxyServer(req *http.Request, res http.ResponseWr
 func (addon *BaseAddon) WebSocketStart(*Flow)                                         {}
 func (addon *BaseAddon) WebSocketMessage(*Flow)                                       {}
 func (addon *BaseAddon) WebSocketEnd(*Flow)                                           {}
+func (addon *BaseAddon) SSEStart(*Flow)                                               {}
+func (addon *BaseAddon) SSEMessage(*Flow)                                             {}
+func (addon *BaseAddon) SSEEnd(*Flow)                                                 {}
 func (addon *BaseAddon) RequestError(*Flow, error)                                    {}
 func (addon *BaseAddon) HTTPConnectError(*Flow, error)                                {}
 
@@ -190,18 +201,13 @@ func (addon *LogAddon) WebSocketMessage(f *Flow) {
 		msgType = "BINARY"
 	}
 
-	// 记录消息内容和方向
-	content := string(lastMsg.Content)
-	if len(content) > 100 {
-		content = content[:100] + "..."
-	}
-	log.Infof("%v WebSocket MSG %s %s [%s] len=%d %s\n",
+	// 只记录消息长度，不记录内容
+	log.Infof("%v WebSocket MSG %s %s [%s] len=%d\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
 		direction,
 		msgType,
-		len(lastMsg.Content),
-		content)
+		len(lastMsg.Content))
 }
 
 // WebSocketEnd 记录 WebSocket 连接结束
@@ -210,6 +216,53 @@ func (addon *LogAddon) WebSocketEnd(f *Flow) {
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
 		len(f.WebScoket.Messages))
+}
+
+// SSEStart 记录 SSE 流开始
+func (addon *LogAddon) SSEStart(f *Flow) {
+	log.Infof("%v SSE START %s - %s\n",
+		f.ConnContext.ClientConn.Conn.RemoteAddr(),
+		f.Request.URL.String(),
+		f.ConnContext.ServerConn.Address)
+}
+
+// SSEMessage 记录 SSE 事件
+func (addon *LogAddon) SSEMessage(f *Flow) {
+	// 获取最新的 SSE 事件
+	events := f.SSE.Events
+	if len(events) == 0 {
+		return
+	}
+	event := events[len(events)-1]
+
+	// 只记录事件长度，不记录内容
+	log.Infof("%v SSE EVENT %s [%s] id=%s data_len=%d\n",
+		f.ConnContext.ClientConn.Conn.RemoteAddr(),
+		f.Request.URL.String(),
+		event.Event,
+		event.ID,
+		len(event.Data))
+}
+
+// SSEEnd 记录 SSE 流结束
+func (addon *LogAddon) SSEEnd(f *Flow) {
+	var StatusCode int
+	if f.Response != nil {
+		StatusCode = f.Response.StatusCode
+	}
+	eventCount := 0
+	if f.SSE != nil {
+		eventCount = len(f.SSE.Events)
+	}
+
+	// 记录格式与 Response 保持一致，但标注为 SSE
+	log.Infof("%v %v %v %v %d [SSE] - %v ms\n",
+		f.ConnContext.ClientConn.Conn.RemoteAddr(),
+		f.Request.Method,
+		f.Request.URL.String(),
+		StatusCode,
+		eventCount,
+		time.Since(f.StartTime).Milliseconds())
 }
 
 type UpstreamCertAddon struct {

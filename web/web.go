@@ -211,6 +211,38 @@ func (web *WebAddon) WebSocketEnd(f *proxy.Flow) {
 	})
 }
 
+// SSEStart 发送 SSE 连接建立消息
+func (web *WebAddon) SSEStart(f *proxy.Flow) {
+	// 对于 SSE 流，需要先发送 Response 消息（3），因为 SSE 不会触发 Response 事件
+	// 确保前端能收到响应头信息
+	web.sendMessageUntil(f, messageTypeResponse)
+
+	// 然后发送 SSEStart 消息
+	web.sendFlow(func() (*messageFlow, error) {
+		return newMessageFlow(messageTypeSSEStart, f)
+	})
+}
+
+// SSEMessage 发送 SSE 消息
+func (web *WebAddon) SSEMessage(f *proxy.Flow) {
+	web.sendFlow(func() (*messageFlow, error) {
+		return newMessageFlow(messageTypeSSEMessage, f)
+	})
+}
+
+// SSEEnd 发送 SSE 连接结束消息
+func (web *WebAddon) SSEEnd(f *proxy.Flow) {
+	// 发送 SSEEnd 消息
+	web.sendFlow(func() (*messageFlow, error) {
+		return newMessageFlow(messageTypeSSEEnd, f)
+	})
+
+	// 清理 flowMessageState，因为 SSE 不会触发 Response 事件来清理
+	web.flowMu.Lock()
+	delete(web.flowMessageState, f)
+	web.flowMu.Unlock()
+}
+
 func (web *WebAddon) RequestError(f *proxy.Flow, err error) {
 	web.flowMu.Lock()
 	delete(web.flowMessageState, f)
