@@ -52,7 +52,7 @@ type Config struct {
 
 func main() {
 	fmt.Println("")
-	fmt.Println("########## AIP HTTP(s) and Websocket proxy 2.0.1 ##########")
+	fmt.Println("########## AIP HTTP(s) and Websocket proxy 2.0.2 ##########")
 	fmt.Println("")
 	fmt.Println(" ")
 
