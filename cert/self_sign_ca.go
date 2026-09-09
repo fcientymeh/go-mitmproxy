@@ -49,8 +49,8 @@ func createCert() (*rsa.PrivateKey, *x509.Certificate, error) {
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().UnixNano() / 100000),
 		Subject: pkix.Name{
-			CommonName:   "mitmproxy",
-			Organization: []string{"mitmproxy"},
+			CommonName:   "aisecproxy",
+			Organization: []string{"AIseclab"},
 		},
 		NotBefore:             time.Now().Add(-time.Hour * 48),
 		NotAfter:              time.Now().Add(time.Hour * 24 * 365 * 3),
@@ -335,7 +335,7 @@ func (ca *SelfSignCA) DummyCert(commonName string) (*tls.Certificate, error) {
 		SerialNumber: big.NewInt(time.Now().UnixNano() / 100000),
 		Subject: pkix.Name{
 			CommonName:   commonName,
-			Organization: []string{"mitmproxy"},
+			Organization: []string{"aisecproxy"},
 		},
 		NotBefore:          time.Now().Add(-time.Hour * 48),
 		NotAfter:           time.Now().Add(time.Hour * 24 * 365),
