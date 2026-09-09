@@ -11,14 +11,15 @@ import (
 	"aisecproxy/internal/helper"
 	"aisecproxy/proxy"
 
-	// "aisecproxy/web"
-
 	"github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
 )
 
 type Config struct {
-	Version      bool     // show go-mitmproxy version
+	Version  bool   // show go-mitmproxy version
+	version  bool   // show go-mitmproxy version
+	filename string // read config from the filename
+
 	Addr         string   // proxy listen addr
 	WebAddr      string   // web interface listen addr
 	SslInsecure  bool     // not verify upstream server SSL/TLS certificates.
@@ -34,7 +35,6 @@ type Config struct {
 	MapLocal     string   // map local config filename
 	LogFile      string   // log file path
 	Filename     string   // read config from the filename
-	ProxyAuth    string   // Require proxy authentication
 
 	// fields needed for data investigation
 	Loglevel                     int //not used at this time
@@ -48,11 +48,12 @@ type Config struct {
 	Dumpallfileswithoutfiltering bool
 	Dumprequests                 bool
 	ConvHtmlToTxtonDumping       bool
+	ProxyAuth                    string // Require proxy authentication
 }
 
 func main() {
 	fmt.Println("")
-	fmt.Println("########## AIP HTTP(s) and Websocket proxy 2.0.3 ##########")
+	fmt.Println("########## AIP HTTP(s) and Websocket proxy 2.0.4 ##########")
 	fmt.Println("")
 	fmt.Println(" ")
 
@@ -80,6 +81,11 @@ func main() {
 
 	//TODO: read ignore hosts and allow hosts from big external database or something else
 
+	if config.version {
+		fmt.Println("gomitmproxy:" + proxy.Version)
+		os.Exit(0)
+	}
+
 	if config.Debug > 0 {
 		rawLog.SetFlags(rawLog.LstdFlags | rawLog.Lshortfile)
 		log.SetLevel(log.DebugLevel)
@@ -106,7 +112,7 @@ func main() {
 
 	p, err := proxy.NewProxy(opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("create proxy: %v", err)
 	}
 
 	// AIS Initialize Redis client
@@ -146,7 +152,10 @@ func main() {
 
 	if config.ProxyAuth != "" && strings.ToLower(config.ProxyAuth) != "any" {
 		log.Infoln("Enable entry authentication")
-		auth := NewDefaultBasicAuth(config.ProxyAuth)
+		auth, err := NewDefaultBasicAuth(config.ProxyAuth)
+		if err != nil {
+			log.Fatalf("create basic auth: %v", err)
+		}
 		p.SetAuthProxy(auth.EntryAuth)
 	}
 
@@ -160,7 +169,7 @@ func main() {
 		p.AddAddon(&proxy.LogAddon{})
 	}
 
-	// p.AddAddon(web.NewWebAddon(config.WebAddr))
+	//p.AddAddon(web.NewWebAddon(config.WebAddr))
 
 	if config.MapRemote != "" {
 		mapRemote, err := addon.NewMapRemoteFromFile(config.MapRemote)

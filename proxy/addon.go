@@ -191,7 +191,7 @@ func (addon *LogAddon) WebSocketStart(f *Flow) {
 
 // WebSocketMessage 记录 WebSocket 消息
 func (addon *LogAddon) WebSocketMessage(f *Flow) {
-	lastMsg := f.WebScoket.Messages[len(f.WebScoket.Messages)-1]
+	lastMsg := f.WebSocket.Messages[len(f.WebSocket.Messages)-1]
 	direction := "C->S"
 	if !lastMsg.FromClient {
 		direction = "S->C"
@@ -215,7 +215,7 @@ func (addon *LogAddon) WebSocketEnd(f *Flow) {
 	log.Debugf("%v WebSocket END %s - %d messages\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
-		len(f.WebScoket.Messages))
+		len(f.WebSocket.Messages))
 }
 
 // SSEStart 记录 SSE 流开始

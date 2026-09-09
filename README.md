@@ -1,14 +1,8 @@
 # go-mitmproxy
 
-<div align="center" markdown="1">
-   <a href="https://apps.apple.com/us/app/sqlman-mysql-database-gui/id6498632117?mt=12">
-	 <img src="./assets/sqlman-en.png" alt="sqlman" width="650"/>
-   </a>
-
-[Welcome to my software: Sqlman - MySQL Database GUI](https://apps.apple.com/us/app/sqlman-mysql-database-gui/id6498632117?mt=12)
-<br>
-
-</div>
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Go Version](https://img.shields.io/badge/go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Release](https://img.shields.io/github/v/release/lqqyt2423/go-mitmproxy?display_name=tag&sort=semver)](https://github.com/lqqyt2423/go-mitmproxy/releases)
 
 [简体中文](./README_CN.md)
 
@@ -53,7 +47,7 @@ The certificate needs to be installed after the first startup to parse HTTPS tra
 
 ### Additional Parameters
 
-ou can use the following command to view more parameters of go-mitmproxy:
+You can use the following command to view more parameters of go-mitmproxy:
 
 ```bash
 go-mitmproxy -h
@@ -206,11 +200,11 @@ You can access the web interface at http://localhost:9081/ using a web browser.
 
 ![](./assets/web-3.png)
 
-### Sponsor Me
+## Sponsor Me
 
 If you find this project helpful, consider buying me a cup of coffee. Feel free to reach out for any technical inquiries.
 
-The author is currently unemployed. If you have any full-time or part-time job opportunities, feel free to scan the QR code to add me on WeChat for further discussion.
+For business cooperation, outsourcing projects, etc., feel free to scan the QR code to add me on WeChat for further discussion.
 
 <table>
   <thead>
@@ -230,6 +224,14 @@ The author is currently unemployed. If you have any full-time or part-time job o
     </tr>
   </thead>
 </table>
+
+Also welcome to try [Sqlman - MySQL Database GUI](https://apps.apple.com/us/app/sqlman-mysql-database-gui/id6498632117?mt=12).
+
+<div align="center" markdown="1">
+   <a href="https://apps.apple.com/us/app/sqlman-mysql-database-gui/id6498632117?mt=12">
+	 <img src="./assets/sqlman-en.png" alt="sqlman" width="650"/>
+   </a>
+</div>
 
 ## License
 

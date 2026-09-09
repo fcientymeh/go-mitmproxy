@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/big"
 	"net"
 	"os"
@@ -191,7 +190,7 @@ func (ca *SelfSignCA) load() error {
 		return fmt.Errorf("%v is not a file", caFile)
 	}
 
-	data, err := ioutil.ReadFile(caFile)
+	data, err := os.ReadFile(caFile)
 	if err != nil {
 		return err
 	}

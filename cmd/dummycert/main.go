@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// 生成假的/用于测试的服务器证书
+// Generate fake/test server certificates
 
 type Config struct {
 	commonName string
@@ -19,7 +19,7 @@ type Config struct {
 
 func loadConfig() *Config {
 	config := new(Config)
-	flag.StringVar(&config.commonName, "commonName", "", "server commonName")
+	flag.StringVar(&config.commonName, "common_name", "", "server commonName")
 	flag.Parse()
 	return config
 }
@@ -39,28 +39,28 @@ func main() {
 
 	caApi, err := cert.NewSelfSignCA("")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	ca := caApi.(*cert.SelfSignCA)
 
 	cert, err := ca.DummyCert(config.commonName)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	os.Stdout.WriteString(fmt.Sprintf("%v-cert.pem\n", config.commonName))
+	fmt.Fprintf(os.Stdout, "%v-cert.pem\n", config.commonName)
 	err = pem.Encode(os.Stdout, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Certificate[0]})
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	os.Stdout.WriteString(fmt.Sprintf("\n%v-key.pem\n", config.commonName))
+	fmt.Fprintf(os.Stdout, "\n%v-key.pem\n", config.commonName)
 
 	keyBytes, err := x509.MarshalPKCS8PrivateKey(&ca.PrivateKey)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	err = pem.Encode(os.Stdout, &pem.Block{Type: "PRIVATE KEY", Bytes: keyBytes})
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

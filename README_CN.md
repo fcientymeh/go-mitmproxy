@@ -1,14 +1,8 @@
 # go-mitmproxy
 
-<div align="center" markdown="1">
-   <a href="https://apps.apple.com/cn/app/sqlman-mysql-gui-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%A2%E6%88%B7%E7%AB%AF/id6498632117?mt=12">
-     <img src="./assets/sqlman-cn.png" alt="sqlman" width="650"/>
-   </a>
-
-[欢迎使用作者开发的软件：Sqlman - MySQL GUI 数据库客户端](https://apps.apple.com/cn/app/sqlman-mysql-gui-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%A2%E6%88%B7%E7%AB%AF/id6498632117?mt=12)
-<br>
-
-</div>
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Go Version](https://img.shields.io/badge/go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
+[![Release](https://img.shields.io/github/v/release/lqqyt2423/go-mitmproxy?display_name=tag&sort=semver)](https://github.com/lqqyt2423/go-mitmproxy/releases)
 
 [English](./README.md)
 
@@ -63,7 +57,7 @@ go-mitmproxy -h
 Usage of go-mitmproxy:
   -addr string
     	代理监听地址 (默认值为 ":9080")
-  -allow_hosts []string
+  -allow_hosts value
     	HTTPS解析域名白名单
   -cert_path string
     	生成证书文件路径
@@ -82,9 +76,9 @@ Usage of go-mitmproxy:
   -ssl_insecure
     	不验证上游服务器的 SSL/TLS 证书
   -upstream string
-    	upstream proxy
+    	上游代理地址
   -upstream_cert
-    	connect to upstream server to look up certificate details (default true)
+    	连接上游服务器以查询证书详情 (默认值为 true)
   -version
     	显示 go-mitmproxy 版本
   -web_addr string
@@ -206,11 +200,11 @@ type Addon interface {
 
 ![](./assets/web-3.png)
 
-### 赞助我
+## 赞助我
 
 如果你觉得这个项目对你有帮助，不妨考虑给我买杯咖啡。如有技术问题，欢迎沟通。
 
-作者目前离职，如果你有全职或兼职工作介绍，欢迎扫码添加微信好友交流。
+如有商务合作、外包等需求，欢迎扫码添加微信好友交流。
 
 <table>
   <thead>
@@ -230,6 +224,14 @@ type Addon interface {
     </tr>
   </thead>
 </table>
+
+也欢迎使用 [Sqlman - MySQL GUI 数据库客户端](https://apps.apple.com/cn/app/sqlman-mysql-gui-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%A2%E6%88%B7%E7%AB%AF/id6498632117?mt=12)。
+
+<div align="center" markdown="1">
+   <a href="https://apps.apple.com/cn/app/sqlman-mysql-gui-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%A2%E6%88%B7%E7%AB%AF/id6498632117?mt=12">
+     <img src="./assets/sqlman-cn.png" alt="sqlman" width="650"/>
+   </a>
+</div>
 
 ## License
 
