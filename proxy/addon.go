@@ -166,7 +166,7 @@ func (addon *LogAddon) Response(f *Flow) {
 	if f.Response != nil && f.Response.Body != nil {
 		contentLen = len(f.Response.Body)
 	}
-	log.Infof("%v %v %v %v %v - %v ms\n", f.ConnContext.ClientConn.Conn.RemoteAddr(), f.Request.Method, f.Request.URL.String(), StatusCode, contentLen, time.Since(f.StartTime).Milliseconds())
+	log.Debugf("%v %v %v %v %v - %v ms\n", f.ConnContext.ClientConn.Conn.RemoteAddr(), f.Request.Method, f.Request.URL.String(), StatusCode, contentLen, time.Since(f.StartTime).Milliseconds())
 }
 
 func (addon *LogAddon) RequestError(f *Flow, err error) {
@@ -183,7 +183,7 @@ func (addon *LogAddon) HTTPConnectError(f *Flow, err error) {
 
 // WebSocketStart 记录 WebSocket 连接建立
 func (addon *LogAddon) WebSocketStart(f *Flow) {
-	log.Infof("%v WebSocket START %s - %s\n",
+	log.Debugf("%v WebSocket START %s - %s\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
 		f.ConnContext.ServerConn.Address)
@@ -202,7 +202,7 @@ func (addon *LogAddon) WebSocketMessage(f *Flow) {
 	}
 
 	// 只记录消息长度，不记录内容
-	log.Infof("%v WebSocket MSG %s %s [%s] len=%d\n",
+	log.Debugf("%v WebSocket MSG %s %s [%s] len=%d\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
 		direction,
@@ -212,7 +212,7 @@ func (addon *LogAddon) WebSocketMessage(f *Flow) {
 
 // WebSocketEnd 记录 WebSocket 连接结束
 func (addon *LogAddon) WebSocketEnd(f *Flow) {
-	log.Infof("%v WebSocket END %s - %d messages\n",
+	log.Debugf("%v WebSocket END %s - %d messages\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
 		len(f.WebScoket.Messages))
@@ -220,7 +220,7 @@ func (addon *LogAddon) WebSocketEnd(f *Flow) {
 
 // SSEStart 记录 SSE 流开始
 func (addon *LogAddon) SSEStart(f *Flow) {
-	log.Infof("%v SSE START %s - %s\n",
+	log.Debugf("%v SSE START %s - %s\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
 		f.ConnContext.ServerConn.Address)
@@ -236,7 +236,7 @@ func (addon *LogAddon) SSEMessage(f *Flow) {
 	event := events[len(events)-1]
 
 	// 只记录事件长度，不记录内容
-	log.Infof("%v SSE EVENT %s [%s] id=%s data_len=%d\n",
+	log.Debugf("%v SSE EVENT %s [%s] id=%s data_len=%d\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
 		event.Event,
@@ -256,7 +256,7 @@ func (addon *LogAddon) SSEEnd(f *Flow) {
 	}
 
 	// 记录格式与 Response 保持一致，但标注为 SSE
-	log.Infof("%v %v %v %v %d [SSE] - %v ms\n",
+	log.Debugf("%v %v %v %v %d [SSE] - %v ms\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.Method,
 		f.Request.URL.String(),

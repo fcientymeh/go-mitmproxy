@@ -113,7 +113,7 @@ func (addon *InstanceLogAddon) Response(f *Flow) {
 		"content_len": bodyLen,
 		"duration_ms": time.Since(f.StartTime).Milliseconds(),
 		"event":       "request_completed",
-	}).Info("Request completed")
+	}).Debug("Request completed")
 }
 
 func (addon *InstanceLogAddon) RequestError(f *Flow, err error) {
