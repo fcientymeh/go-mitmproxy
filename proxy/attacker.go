@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"runtime/debug"
 	"strings"
 
 	"aisecproxy/cert"
@@ -150,7 +151,13 @@ func (a *attacker) serveConn(clientTlsConn *tls.Conn, connCtx *ConnContext) {
 
 func (a *attacker) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if req.URL.Scheme == "" {
+		connCtx := req.Context().Value(connContextKey).(*ConnContext)
 		req.URL.Scheme = "https"
+		if connCtx.ClientConn.Tls {
+			req.URL.Scheme = "https"
+		} else {
+			req.URL.Scheme = "http"
+		}
 	}
 	if req.URL.Host == "" {
 		req.URL.Host = req.Host
@@ -516,7 +523,7 @@ func (a *attacker) attack(res http.ResponseWriter, req *http.Request) {
 	// when addons panic
 	defer func() {
 		if err := recover(); err != nil {
-			log.Warnf("Recovered: %v\n", err)
+			log.Warnf("Recovered: %v\n%s", err, debug.Stack())
 		}
 	}()
 
