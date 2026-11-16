@@ -28,7 +28,6 @@ func ReaderToBuffer(r io.Reader, limit int64) ([]byte, io.Reader, error) {
 		return nil, io.MultiReader(bytes.NewBuffer(buf.Bytes()), r), nil
 	}
 
-	// 返回 buffer
 	return buf.Bytes(), nil, nil
 }
 

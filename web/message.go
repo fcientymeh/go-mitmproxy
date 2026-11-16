@@ -10,7 +10,6 @@ import (
 
 	//uuid "github.com/satori/go.uuid"
 	uuid "github.com/google/uuid"
-	"github.com/lqqyt2423/go-mitmproxy/proxy"
 	log "github.com/sirupsen/logrus"
 )
 

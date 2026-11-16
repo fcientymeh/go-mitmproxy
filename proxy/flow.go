@@ -156,12 +156,12 @@ type WebSocketMessage struct {
 func (m *WebSocketMessage) MarshalJSON() ([]byte, error) {
 	typeAlias := struct {
 		Type       int    `json:"type"`
-		Content    string `json:"content"`    // base64 encoded
+		Content    string `json:"content"` // base64 encoded
 		FromClient bool   `json:"fromClient"`
 		Timestamp  string `json:"timestamp"`
 	}{
 		Type:       m.Type,
-		Content:    string(m.Content), // []byte 会被编码为 base64
+		Content:    string(m.Content), // []byte zostanie zakodowane w formacie Base64
 		FromClient: m.FromClient,
 		Timestamp:  m.Timestamp.Format(time.RFC3339Nano),
 	}
@@ -198,12 +198,12 @@ func (wsData *WebSocketData) addMessage(msgType int, content []byte, fromClient 
 
 // SSEEvent represents a single Server-Sent Event
 type SSEEvent struct {
-	ID      string    `json:"id,omitempty"`      // event id
-	Event   string    `json:"event,omitempty"`   // event type (default: "message")
-	Data    string    `json:"data"`              // event data
-	Retry   int       `json:"retry,omitempty"`   // retry interval in milliseconds
-	Raw     string    `json:"raw"`               // raw event text
-	Time    time.Time `json:"timestamp"`         // when this event was received
+	ID    string    `json:"id,omitempty"`    // event id
+	Event string    `json:"event,omitempty"` // event type (default: "message")
+	Data  string    `json:"data"`            // event data
+	Retry int       `json:"retry,omitempty"` // retry interval in milliseconds
+	Raw   string    `json:"raw"`             // raw event text
+	Time  time.Time `json:"timestamp"`       // when this event was received
 }
 
 // SSEData holds all SSE events for a flow
@@ -224,4 +224,3 @@ func (sseData *SSEData) addEvent(event *SSEEvent) {
 	defer sseData.mu.Unlock()
 	sseData.Events = append(sseData.Events, event)
 }
-

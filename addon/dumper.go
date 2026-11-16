@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"aisecproxy/proxy"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -47,7 +48,7 @@ func (d *Dumper) RequestError(f *proxy.Flow, err error) {
 
 // call when <-f.Done()
 func (d *Dumper) dump(f *proxy.Flow) {
-	// 参考 httputil.DumpRequest
+	// httputil.DumpRequest
 
 	buf := bytes.NewBuffer(make([]byte, 0))
 	fmt.Fprintf(buf, "%s %s %s\r\n", f.Request.Method, f.Request.URL.RequestURI(), f.Request.Proto)

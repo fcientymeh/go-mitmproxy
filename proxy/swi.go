@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	
 	"strconv"
 	"strings"
 	"time"
@@ -29,6 +30,7 @@ func executeSwiMode(f *Flow) error {
 		log.Error(err)
 		return err
 	}
+	// fmt.Println(string(respbodyArray))
 
 	// Request body decoding
 	reqbodyArray := f.Request.Body
@@ -593,9 +595,8 @@ It only dumps files to disk without further processing.
 func executeDumperMode(f *Flow) error {
 	contentType := strings.Split(f.Response.Header.Get("Content-type"), ";")[0]
 	ext := MimeMap[contentType]
-
 	body, _ := f.Response.DecodedBody()
-
+	// fmt.Println(string(body))
 	// Skip small text files
 	if len(body) <= *MinSizeDumpTextFile && f.Response.IsTextContentType() {
 		return nil

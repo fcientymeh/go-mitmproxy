@@ -1,15 +1,15 @@
 package main
 
 import (
+	"aisecproxy/addon"
+	"aisecproxy/internal/helper"
+	"aisecproxy/proxy"
+	"aisecproxy/web"
 	"fmt"
 	rawLog "log"
 	"net/http"
 	"os"
 	"strings"
-
-	"aisecproxy/addon"
-	"aisecproxy/internal/helper"
-	"aisecproxy/proxy"
 
 	"github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
@@ -53,18 +53,18 @@ type Config struct {
 
 func main() {
 	fmt.Println("")
-	fmt.Println("########## AIP HTTP(s) and Websocket proxy 2.0.4 ##########")
+	fmt.Println("########## AIP HTTP(s) and Websocket proxy 2.0.4 ########## - main.go:56")
 	fmt.Println("")
 	fmt.Println(" ")
 
 	config := loadConfig()
-	fmt.Printf("%+v\n", config)
+	fmt.Printf("%+v\n - main.go:61", config)
 	fmt.Println(" ")
 
 	log.Infof("Read MIME types from file")
 	err := ReadMimeTypes()
 	if err != nil {
-		log.Println("Error reading mime configuration")
+		log.Println("Error reading mime configuration - main.go:67")
 		os.Exit(-1)
 	} else {
 		log.Infof("Read MIME types from file read successfully")
@@ -73,7 +73,7 @@ func main() {
 	log.Infof("Read MIME types in JSON from file")
 	err = ReadMimeTypesInJSON()
 	if err != nil {
-		log.Println("Error reading mime for JSON")
+		log.Println("Error reading mime for JSON - main.go:76")
 		os.Exit(-1)
 	} else {
 		log.Infof("Read MIME types in JSON from file read successfully")
@@ -82,7 +82,7 @@ func main() {
 	//TODO: read ignore hosts and allow hosts from big external database or something else
 
 	if config.version {
-		fmt.Println("gomitmproxy:" + proxy.Version)
+		fmt.Println("gomitmproxy: - main.go:85" + proxy.Version)
 		os.Exit(0)
 	}
 
@@ -169,7 +169,7 @@ func main() {
 		p.AddAddon(&proxy.LogAddon{})
 	}
 
-	//p.AddAddon(web.NewWebAddon(config.WebAddr))
+	p.AddAddon(web.NewWebAddon(config.WebAddr))
 
 	if config.MapRemote != "" {
 		mapRemote, err := addon.NewMapRemoteFromFile(config.MapRemote)
@@ -179,6 +179,14 @@ func main() {
 			p.AddAddon(mapRemote)
 		}
 	}
+
+	// ------ test nowego addona do obslugi realtime swi
+	// w realu: regext na texcie, slownik, blokowanie typów plików
+	// asynchronicznie działamy z SWI, ono wystawia nam sha danych do blokowania ??
+	//
+	p.AddAddon(&RealtimeSWI{})
+
+	// ----- end
 
 	if config.MapLocal != "" {
 		mapLocal, err := addon.NewMapLocalFromFile(config.MapLocal)

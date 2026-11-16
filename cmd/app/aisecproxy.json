@@ -7,7 +7,7 @@
   "AllowHosts": [
   ],
   "CertPath": "certs",
-  "Debug": 2,
+  "Debug": 0,
   "Dump": "",
   "DumpLevel": 1,
   "Upstream": "",
@@ -17,7 +17,7 @@
   "LogFile": "",
   "ProxyAuth": "",
   "loglevel": 5,
-  "proxyMode": 0,
+  "proxyMode": 3,
   "storageDir": "suricata",
   "redisAddr": "wawcoremngm.fc.internal:6379",
   "redisPassword": "",

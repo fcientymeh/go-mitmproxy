@@ -21,7 +21,7 @@ var normalErrMsgs []string = []string{
 	"use of closed network connection",
 }
 
-// 仅打印预料之外的错误信息
+// Wyświetla tylko komunikaty o nieoczekiwanych błędach
 func logErr(log *log.Entry, err error) (loged bool) {
 	msg := err.Error()
 

@@ -102,7 +102,7 @@ var Dumprequests *bool
 var ClientRedis *redis.Client
 var RedisQueue *string
 var rclient = redis.NewClient(&redis.Options{
-	Addr:     "wawcoremngm.fc.internal:6379", //TODO - read from config
+	Addr:     "wawcoremngm.fc.internal:6379",
 	Password: "",
 	DB:       0,
 })
@@ -118,6 +118,7 @@ func (addon *LogAddon) ClientConnected(client *ClientConn) {
 
 func (addon *LogAddon) ClientDisconnected(client *ClientConn) {
 	log.Debugf("%v client disconnect\n", client.Conn.RemoteAddr())
+	// SWI -> black list URL checking
 }
 
 func (addon *LogAddon) ServerConnected(connCtx *ConnContext) {
@@ -136,18 +137,17 @@ func (addon *LogAddon) Requestheaders(f *Flow) {
 			log.Debug("No headers or body in stream")
 			return
 		}
-
 		switch *ProxyWorkMode {
 		case 0: // klasyczne proxy, ale nic nie zrzuca, nie analizuje
 		case 1:
 			// tryb analizy z SWI
-			//funkcja zwraca error, ale nie jest obsługiwany, bo w sumie do niczego go nie potrzbujemy. Albo dump się uda, albo nie
+			// funkcja zwraca error, ale nie jest obsługiwany, bo w sumie do niczego go nie potrzbujemy. Albo dump się uda, albo nie
 			// wszelkie logowanie jest w trakcie. decelowo usupełni się może na potrzebę statystyk
 			// log.Debug("Executing swi mode for request")
 			go executeSwiMode(f)
 		case 2:
-			// tryb  dumpera wykrytych MIME typów na filestore
-			//funkcja zwraca error, ale nie jest obsługiwany, bo w sumie do niczego go nie potrzbujemy. Albo dump się uda, albo nie
+			// tryb dumpera wykrytych MIME typów na filestore
+			// funkcja zwraca error, ale nie jest obsługiwany, bo w sumie do niczego go nie potrzbujemy. Albo dump się uda, albo nie
 			// wszelkie logowanie jest w trakcie
 			go executeDumperMode(f)
 		default:
@@ -181,7 +181,7 @@ func (addon *LogAddon) HTTPConnectError(f *Flow, err error) {
 	log.Errorf("%v CONNECT ERROR %v - %v\n", f.ConnContext.ClientConn.Conn.RemoteAddr(), f.Request.URL.Host, err)
 }
 
-// WebSocketStart 记录 WebSocket 连接建立
+// WebSocketStart
 func (addon *LogAddon) WebSocketStart(f *Flow) {
 	log.Debugf("%v WebSocket START %s - %s\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
@@ -189,7 +189,7 @@ func (addon *LogAddon) WebSocketStart(f *Flow) {
 		f.ConnContext.ServerConn.Address)
 }
 
-// WebSocketMessage 记录 WebSocket 消息
+// WebSocketMessage — rejestruje wiadomości WebSocket
 func (addon *LogAddon) WebSocketMessage(f *Flow) {
 	lastMsg := f.WebSocket.Messages[len(f.WebSocket.Messages)-1]
 	direction := "C->S"
@@ -201,7 +201,7 @@ func (addon *LogAddon) WebSocketMessage(f *Flow) {
 		msgType = "BINARY"
 	}
 
-	// 只记录消息长度，不记录内容
+	// Rejestruje tylko długość wiadomości, nie zapisuje jej treści.
 	log.Debugf("%v WebSocket MSG %s %s [%s] len=%d\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
@@ -210,7 +210,7 @@ func (addon *LogAddon) WebSocketMessage(f *Flow) {
 		len(lastMsg.Content))
 }
 
-// WebSocketEnd 记录 WebSocket 连接结束
+// WebSocketEnd
 func (addon *LogAddon) WebSocketEnd(f *Flow) {
 	log.Debugf("%v WebSocket END %s - %d messages\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
@@ -218,7 +218,7 @@ func (addon *LogAddon) WebSocketEnd(f *Flow) {
 		len(f.WebSocket.Messages))
 }
 
-// SSEStart 记录 SSE 流开始
+// WebSocketEnd — rejestruje zakończenie połączenia WebSocket
 func (addon *LogAddon) SSEStart(f *Flow) {
 	log.Debugf("%v SSE START %s - %s\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
@@ -226,16 +226,16 @@ func (addon *LogAddon) SSEStart(f *Flow) {
 		f.ConnContext.ServerConn.Address)
 }
 
-// SSEMessage 记录 SSE 事件
+// SSEMessage — rejestruje zdarzenia SSE
 func (addon *LogAddon) SSEMessage(f *Flow) {
-	// 获取最新的 SSE 事件
+	// Pobiera najnowsze zdarzenie SSE
 	events := f.SSE.Events
 	if len(events) == 0 {
 		return
 	}
 	event := events[len(events)-1]
 
-	// 只记录事件长度，不记录内容
+	// Rejestruje tylko długość zdarzenia, nie zapisuje jego treści
 	log.Debugf("%v SSE EVENT %s [%s] id=%s data_len=%d\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.URL.String(),
@@ -244,7 +244,7 @@ func (addon *LogAddon) SSEMessage(f *Flow) {
 		len(event.Data))
 }
 
-// SSEEnd 记录 SSE 流结束
+// SSEEnd — rejestruje zakończenie strumienia SSE
 func (addon *LogAddon) SSEEnd(f *Flow) {
 	var StatusCode int
 	if f.Response != nil {
@@ -255,7 +255,7 @@ func (addon *LogAddon) SSEEnd(f *Flow) {
 		eventCount = len(f.SSE.Events)
 	}
 
-	// 记录格式与 Response 保持一致，但标注为 SSE
+	// Format zapisu pozostaje zgodny z formatem Response, ale jest oznaczony jako SSE
 	log.Debugf("%v %v %v %v %d [SSE] - %v ms\n",
 		f.ConnContext.ClientConn.Conn.RemoteAddr(),
 		f.Request.Method,

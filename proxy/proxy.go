@@ -10,16 +10,17 @@ import (
 
 	"aisecproxy/cert"
 	"aisecproxy/internal/helper"
+
 	log "github.com/sirupsen/logrus"
 )
 
 type Options struct {
 	Debug             int
 	Addr              string
-	StreamLargeBodies int64 // 当请求或响应体大于此字节时，转为 stream 模式
+	StreamLargeBodies int64 // Przełączyć się w tryb stream, gdy rozmiar treści żądania lub odpowiedzi przekroczy tę liczbę bajtów.
 	SslInsecure       bool
 	CaRootPath        string
-	NewCaFunc         func() (cert.CA, error) //创建 Ca 的函数
+	NewCaFunc         func() (cert.CA, error) // CA
 	Upstream          string
 	LogFilePath       string // Path to write logs to file
 }
@@ -29,12 +30,14 @@ type Proxy struct {
 	Version string
 	Addons  []Addon
 
-	entry            *entry
-	attacker         *attacker
-	webSocketHandler *webSocketHandler
-	shouldIntercept  func(req *http.Request) bool              // req is received by proxy.server
-	upstreamProxy    func(req *http.Request) (*url.URL, error) // req is received by proxy.server, not client request
-	authProxy        func(res http.ResponseWriter, req *http.Request) (bool, error)
+	entry                *entry
+	attacker             *attacker
+	transparentEntry     *transparentEntry // new
+	transparentHTTPEntry *transparentHTTPEntry
+	webSocketHandler     *webSocketHandler
+	shouldIntercept      func(req *http.Request) bool              // req is received by proxy.server
+	upstreamProxy        func(req *http.Request) (*url.URL, error) // req is received by proxy.server, not client request
+	authProxy            func(res http.ResponseWriter, req *http.Request) (bool, error)
 }
 
 // proxy.server req context key
@@ -55,6 +58,8 @@ func NewProxy(opts *Options) (*Proxy, error) {
 	}
 
 	proxy.entry = newEntry(proxy)
+	proxy.transparentEntry = newTransparentEntry(proxy)
+	proxy.transparentHTTPEntry = newTransparentHTTPEntry(proxy)
 
 	attacker, err := newAttacker(proxy)
 	if err != nil {
@@ -73,15 +78,33 @@ func (proxy *Proxy) AddAddon(addon Addon) {
 
 func (proxy *Proxy) Start() error {
 	go func() {
+		if err := proxy.transparentEntry.start(":443"); err != nil {
+			log.Errorf("transparent listener: %v", err)
+		}
+	}()
+
+	go func() {
 		if err := proxy.attacker.start(); err != nil {
 			log.Error(err)
 		}
 	}()
+
+	go func() {
+		if err := proxy.transparentHTTPEntry.start(":80"); err != nil {
+			log.Errorf("transparent HTTP listener: %v", err)
+		}
+	}()
+
 	return proxy.entry.start()
 }
 
 func (proxy *Proxy) Close() error {
-	return proxy.entry.close()
+	err := proxy.transparentEntry.close()
+	entryErr := proxy.entry.close()
+	if err != nil {
+		return err
+	}
+	return entryErr
 }
 
 func (proxy *Proxy) Shutdown(ctx context.Context) error {

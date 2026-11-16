@@ -106,7 +106,7 @@ func NewSelfSignCA(path string) (CA, error) {
 
 	ca := &SelfSignCA{
 		StorePath: storePath,
-		cache:     lru.New(100),
+		cache:     lru.New(1000),
 		group:     new(singleflight.Group),
 	}
 

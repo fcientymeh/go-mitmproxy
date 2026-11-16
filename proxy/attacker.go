@@ -65,7 +65,7 @@ func newAttacker(proxy *Proxy) (*attacker, error) {
 				},
 			},
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				// 禁止自动重定向
+				// Zabronić automatycznego przekierowywania
 				return http.ErrUseLastResponse
 			},
 		},
@@ -149,11 +149,22 @@ func (a *attacker) serveConn(clientTlsConn *tls.Conn, connCtx *ConnContext) {
 }
 
 func (a *attacker) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	connCtx := req.Context().Value(connContextKey).(*ConnContext)
+
 	if req.URL.Scheme == "" {
-		req.URL.Scheme = "https"
+		if connCtx.ClientConn.Tls {
+			req.URL.Scheme = "https"
+		} else {
+			req.URL.Scheme = "http"
+		}
 	}
+
 	if req.URL.Host == "" {
 		req.URL.Host = req.Host
+	}
+
+	if !connCtx.ClientConn.Tls && req.URL.Scheme == "http" {
+		a.initHttpDialFn(req)
 	}
 
 	if strings.EqualFold(req.Header.Get("Connection"), "Upgrade") && strings.EqualFold(req.Header.Get("Upgrade"), "websocket") {
